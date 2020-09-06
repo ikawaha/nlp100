@@ -20,8 +20,9 @@ func SentenceList(ts []Token) []Sentence {
 	start := 0
 	for i, v := range ts {
 		if v.POS == "EOS" {
+			i++
 			ret = append(ret, ts[start:i])
-			start = i + 1
+			start = i
 		}
 	}
 	return ret
