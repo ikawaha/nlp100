@@ -23,7 +23,7 @@ func Answer37() {
 	for i := range sentences {
 		n := len(sentences[i])         // 元の文の長さを記録しておいて
 		wordFilter.Drop(&sentences[i]) // 猫が入っていたらその形態素を落とす
-		if n != len(sentences[i]) {    // 長さが変わっていたら共起している後を足す
+		if n != len(sentences[i]) {    // 長さが変わっていたら共起している形態素を足す
 			posFilter.Drop(&sentences[i]) // 面白みのない形態素を落とす
 			freq.Add(sentences[i]...)
 		}
