@@ -1,26 +1,23 @@
 package chapter04
 
-type NounPhraseANOB struct {
-	A string
-	B string
-}
+import (
+	"fmt"
+	"log"
 
-func (n NounPhraseANOB) String() string {
-	return n.A + "の" + n.B
-}
+	"github.com/ikawaha/kagome/v2/filter"
+)
 
-func NounPhraseANOBFilter(ts []Token) []NounPhraseANOB {
-	var ret []NounPhraseANOB
-	for i := range ts {
-		if i < 2 {
-			continue
-		}
-		if ts[i-2].POS == "名詞" && ts[i-1].Surface == "の" && ts[i].POS == "名詞" {
-			ret = append(ret, NounPhraseANOB{
-				A: ts[i-2].Surface,
-				B: ts[i].Surface,
-			})
+func Answer33() {
+	posFilter := filter.NewPOSFilter(filter.POS{"名詞"})
+	sentences, err := TokenizeTextFile("./testdata/neko.txt")
+	if err != nil {
+		log.Fatalf("unexpected error, %v", err)
+	}
+	for _, s := range sentences {
+		for i := 2; i < len(s); i++ {
+			if posFilter.Match(s[i-2].POS()) && s[i-1].Surface == "の" && posFilter.Match(s[i].POS()) {
+				fmt.Println(s[i-2].Surface, s[i-1].Surface, s[i].Surface)
+			}
 		}
 	}
-	return ret
 }

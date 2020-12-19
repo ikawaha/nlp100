@@ -1,35 +1,55 @@
 package chapter04
 
 import (
+	"fmt"
+	"log"
 	"sort"
+
+	"github.com/ikawaha/kagome/v2/tokenizer"
 )
 
-type TokenFreq struct {
-	token Token
-	freq  int
+type Freq struct {
+	Surface string
+	Count   int
 }
 
-func Freq(ts []Token) []TokenFreq {
-	freq := map[Token]int{}
+type FreqCounter map[string]int
+
+func NewFreqCounter() *FreqCounter {
+	return &FreqCounter{}
+}
+
+func (c FreqCounter) Add(ts ...tokenizer.Token) {
 	for _, v := range ts {
-		if v.POS == "BOS" || v.POS == "EOS" {
-			continue
-		}
-		c := freq[v]
-		freq[v] = c + 1
+		i := c[v.Surface]
+		c[v.Surface] = i + 1
 	}
-	list := make([]TokenFreq, 0, len(freq))
-	for k, v := range freq {
-		list = append(list, TokenFreq{
-			token: k,
-			freq:  v,
-		})
+}
+
+func (c FreqCounter) List() []Freq {
+	var list []Freq
+	for k, v := range c {
+		list = append(list, Freq{Surface: k, Count: v})
 	}
 	sort.Slice(list, func(i, j int) bool {
-		if list[i].freq == list[j].freq {
-			return list[i].token.Surface < list[j].token.Surface
+		if list[i].Count == list[j].Count {
+			return list[i].Surface < list[j].Surface
 		}
-		return list[i].freq > list[j].freq
+		return list[i].Count > list[j].Count
 	})
 	return list
+}
+
+func Answer35() {
+	sentences, err := TokenizeTextFile("./testdata/neko.txt")
+	if err != nil {
+		log.Fatalf("unexpected error, %v", err)
+	}
+	freq := NewFreqCounter()
+	for _, s := range sentences {
+		freq.Add(s...)
+	}
+	for i, v := range freq.List() {
+		fmt.Println(i+1, v.Surface, v.Count)
+	}
 }
