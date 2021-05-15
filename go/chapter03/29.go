@@ -1,6 +1,7 @@
 package chapter03
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -11,8 +12,30 @@ import (
 )
 
 var (
-	imageURLP = regexp.MustCompile(`"url":"(.+?)",`)
+	imageURLP    = regexp.MustCompile(`"url":"(.+?)",`)
+	errNotFound  = errors.New("not found")
+	wikiMediaURL = `https://commons.wikimedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&format=json&titles=File:`
 )
+
+func fetch(p string) (string, error) {
+	r, err := (&http.Client{
+		Timeout: 30 * time.Second,
+	}).Get(wikiMediaURL + p)
+	if err != nil {
+		return "", err
+	}
+	defer r.Body.Close()
+
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		return "", err
+	}
+	match := imageURLP.FindStringSubmatch(string(b))
+	if len(match) == 2 {
+		return match[1], nil
+	}
+	return "", errNotFound
+}
 
 func ExtractCountryFlagFilename() ([]string, error) {
 	data, err := ExtractBasicInformation()
@@ -26,21 +49,15 @@ func ExtractCountryFlagFilename() ([]string, error) {
 				continue
 			}
 			p := strings.ReplaceAll(v, " ", "_")
-			r, err := http.Get(`https://commons.wikimedia.org/w/api.php?action=query&prop=imageinfo&iiprop=url&format=json&titles=File:` + p)
+			url, err := fetch(p)
 			if err != nil {
+				if errors.Is(err, errNotFound) {
+					continue
+				}
 				return nil, err
 			}
 			time.Sleep(time.Second)
-
-			b, err := io.ReadAll(r.Body)
-			if err != nil {
-				return nil, err
-			}
-			match := imageURLP.FindStringSubmatch(string(b))
-			if len(match) != 2 {
-				continue
-			}
-			ret = append(ret, match[1])
+			ret = append(ret, url)
 			break
 		}
 	}
